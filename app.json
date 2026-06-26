@@ -20,6 +20,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-secure-store",
+      ["expo-sensors", { "motionPermission": "Required for security verification" }],
+      ["expo-location", { "locationWhenInUsePermission": "Required for fraud detection" }]
+    ]
   }
 }
