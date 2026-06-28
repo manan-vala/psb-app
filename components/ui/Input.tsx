@@ -7,9 +7,11 @@ interface InputProps extends TextInputProps {
   label: string;
   leadingIcon?: keyof typeof MaterialIcons.glyphMap;
   isPassword?: boolean;
+  onFocusCapture?: () => void;
+  onChangeTextCapture?: (value: string) => void;
 }
 
-export function Input({ label, leadingIcon, isPassword, style, ...props }: InputProps) {
+export function Input({ label, leadingIcon, isPassword, style, onFocusCapture, onChangeTextCapture, ...props }: InputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -28,8 +30,15 @@ export function Input({ label, leadingIcon, isPassword, style, ...props }: Input
         <TextInput
           style={styles.input}
           placeholderTextColor={Colors.onSurfaceVariant + '80'}
-          onFocus={() => setIsFocused(true)}
+          onFocus={() => {
+            setIsFocused(true);
+            onFocusCapture?.();
+          }}
           onBlur={() => setIsFocused(false)}
+          onChangeText={(text) => {
+            onChangeTextCapture?.(text);
+            if (props.onChangeText) props.onChangeText(text);
+          }}
           secureTextEntry={isPassword && !showPassword}
           {...props}
         />

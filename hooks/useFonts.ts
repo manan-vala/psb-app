@@ -1,14 +1,31 @@
 import { useFonts as useExpoFonts } from 'expo-font';
+import { useEffect } from 'react';
+import {
+  Manrope_400Regular,
+  Manrope_600SemiBold,
+  Manrope_700Bold,
+} from '@expo-google-fonts/manrope';
+import {
+  WorkSans_400Regular,
+  WorkSans_500Medium,
+  WorkSans_600SemiBold,
+} from '@expo-google-fonts/work-sans';
 
 export function useFonts() {
-  const [fontsLoaded] = useExpoFonts({
-    'Manrope-Regular': 'https://github.com/google/fonts/raw/main/ofl/manrope/Manrope-Regular.ttf',
-    'Manrope-SemiBold': 'https://github.com/google/fonts/raw/main/ofl/manrope/Manrope-SemiBold.ttf',
-    'Manrope-Bold': 'https://github.com/google/fonts/raw/main/ofl/manrope/Manrope-Bold.ttf',
-    'WorkSans-Regular': 'https://github.com/google/fonts/raw/main/ofl/worksans/WorkSans-Regular.ttf',
-    'WorkSans-Medium': 'https://github.com/google/fonts/raw/main/ofl/worksans/WorkSans-Medium.ttf',
-    'WorkSans-SemiBold': 'https://github.com/google/fonts/raw/main/ofl/worksans/WorkSans-SemiBold.ttf',
+  const [fontsLoaded, fontError] = useExpoFonts({
+    'Manrope-Regular': Manrope_400Regular,
+    'Manrope-SemiBold': Manrope_600SemiBold,
+    'Manrope-Bold': Manrope_700Bold,
+    'WorkSans-Regular': WorkSans_400Regular,
+    'WorkSans-Medium': WorkSans_500Medium,
+    'WorkSans-SemiBold': WorkSans_600SemiBold,
   });
 
-  return fontsLoaded;
+  useEffect(() => {
+    if (fontError) {
+      console.error("Error loading fonts:", fontError);
+    }
+  }, [fontError]);
+
+  return fontsLoaded || !!fontError;
 }

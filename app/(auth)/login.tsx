@@ -1,17 +1,53 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, Shadows } from '../../constants/theme';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { useTelemetry } from '../../context/TelemetryContext';
+
+// Simple UUID generator for the demo session
+function generateSessionId() {
+  return Math.random().toString(36).substring(2, 15);
+}
 
 export default function LoginScreen() {
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const {
+    keystrokeInputProps,
+    pasteHandlers,
+    startGyroSampling,
+    stopGyroSampling,
+    submitTelemetry,
+  } = useTelemetry();
 
-  const handleLogin = () => {
-    // Mock login logic -> proceed to app
-    router.replace('/(app)/home');
+  const handleLogin = async () => {
+    setLoading(true);
+    try {
+      const sessionId = generateSessionId();
+      const userId = 'user_123'; // Hardcoded for demo
+      
+      const assessment = await submitTelemetry(userId, sessionId);
+
+      if (assessment.action === 'ALLOW') {
+        router.replace('/(app)/home');
+      } else if (assessment.action === 'STEP_UP') {
+        // Show BiometricModal (always resolves true in demo)
+        // For now, pass through
+        router.replace('/(app)/home');
+      } else {
+        // BLOCK
+        router.push({ pathname: '/(auth)/blocked', params: { reason: assessment.explanation } });
+      }
+    } catch (err) {
+      // API unreachable -> fail open for demo
+      console.warn('Telemetry API unreachable, failing open', err);
+      router.replace('/(app)/home');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -49,13 +85,20 @@ export default function LoginScreen() {
               placeholder="Enter your password"
               leadingIcon="lock"
               isPassword
+              {...keystrokeInputProps()}
+              onFocusCapture={() => {
+                pasteHandlers.onFocusCapture();
+                startGyroSampling();
+              }}
+              onChangeTextCapture={pasteHandlers.onChangeTextCapture}
+              onBlur={stopGyroSampling}
             />
             <Text style={styles.forgotPassword}>Forgot Password?</Text>
           </View>
 
           {/* Actions */}
           <View style={styles.actions}>
-            <Button label="Login" onPress={handleLogin} />
+            <Button label="Login" onPress={handleLogin} loading={loading} />
             
             <View style={styles.dividerContainer}>
               <View style={styles.dividerLine} />
@@ -68,6 +111,7 @@ export default function LoginScreen() {
               variant="secondary"
               icon="fingerprint"
               onPress={handleLogin}
+              disabled={loading}
             />
           </View>
 
