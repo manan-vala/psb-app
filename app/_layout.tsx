@@ -14,8 +14,11 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const fontsLoaded = useFonts();
 
+  console.log("RootLayout render, fontsLoaded:", fontsLoaded);
+
   useEffect(() => {
     if (fontsLoaded) {
+      console.log("Hiding Splash Screen...");
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded]);

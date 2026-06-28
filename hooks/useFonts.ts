@@ -21,6 +21,8 @@ export function useFonts() {
     'WorkSans-SemiBold': WorkSans_600SemiBold,
   });
 
+  console.log("useFonts state:", { fontsLoaded, fontError: fontError?.message });
+
   useEffect(() => {
     if (fontError) {
       console.error("Error loading fonts:", fontError);
