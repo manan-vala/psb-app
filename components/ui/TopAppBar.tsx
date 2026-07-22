@@ -14,7 +14,7 @@ interface TopAppBarProps {
 }
 
 export function TopAppBar({
-  title = 'bob World',
+  title = 'Bob World',
   showMenuIcon,
   showBackIcon,
   onMenuPress,

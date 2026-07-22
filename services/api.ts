@@ -20,3 +20,11 @@ export async function submitTelemetry(payload: TelemetryPayload): Promise<RiskAs
   const { data } = await apiClient.post<RiskAssessment>('/api/assess', payload);
   return data;
 }
+
+export async function reportPayment(amount: string, payeeName: string): Promise<void> {
+  try {
+    await apiClient.post('/api/payment', { amount, payeeName });
+  } catch (error) {
+    console.error('Failed to report payment:', error);
+  }
+}

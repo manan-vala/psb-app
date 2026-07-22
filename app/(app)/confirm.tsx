@@ -1,20 +1,38 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BlurView } from 'expo-blur';
+
 import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../../constants/theme';
 import { TopAppBar } from '../../components/ui/TopAppBar';
 import { Button } from '../../components/ui/Button';
 
 export default function ConfirmScreen() {
   const router = useRouter();
+  const { amount, payeeName } = useLocalSearchParams<{ amount: string, payeeName: string }>();
   const insets = useSafeAreaInsets();
 
+  const numericAmount = parseFloat(amount || '0');
+  const isLargeTransfer = numericAmount > 10000;
+  
+  const [otp, setOtp] = useState('');
+
+  useEffect(() => {
+    if (isLargeTransfer) {
+      const timer = setTimeout(() => {
+        Alert.alert('SMS Notification', 'Your BOB World OTP is 1234. Do not share this with anyone.');
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isLargeTransfer]);
+
   const handleConfirm = () => {
-    // Navigate back to home or a success screen
-    router.replace('/(app)/home');
+    if (isLargeTransfer && otp !== '1234') {
+      Alert.alert('Verification Failed', 'Please enter the correct OTP sent to your registered mobile number.');
+      return;
+    }
+    router.push({ pathname: '/(app)/password', params: { amount, payeeName } });
   };
 
   return (
@@ -25,7 +43,15 @@ export default function ConfirmScreen() {
         onBackPress={() => router.back()} 
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
         
         {/* Decorative Header */}
         <View style={styles.headerArea}>
@@ -33,7 +59,7 @@ export default function ConfirmScreen() {
             <MaterialIcons name="payments" size={32} color={Colors.primary} />
           </View>
           <Text style={styles.headerSubtitle}>You are paying</Text>
-          <Text style={styles.headerTitle}>Jane Cooper</Text>
+          <Text style={styles.headerTitle} adjustsFontSizeToFit numberOfLines={2}>{payeeName || 'Unknown Payee'}</Text>
         </View>
 
         {/* Transaction Details Card */}
@@ -41,14 +67,14 @@ export default function ConfirmScreen() {
           <View style={styles.cardTopGradient} />
           
           <View style={styles.amountSection}>
-            <Text style={styles.amountValue}>$ 250.00</Text>
+            <Text style={styles.amountValue} adjustsFontSizeToFit numberOfLines={1}>₹ {numericAmount.toFixed(2)}</Text>
             <Text style={styles.amountLabel}>Total Amount</Text>
           </View>
 
           <View style={styles.detailsSection}>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Payee Name</Text>
-              <Text style={styles.detailValue}>Jane Cooper</Text>
+              <Text style={[styles.detailValue, { flexShrink: 1, textAlign: 'right', marginLeft: 16 }]} numberOfLines={2}>{payeeName || 'Unknown Payee'}</Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Transaction Date</Text>
@@ -63,7 +89,7 @@ export default function ConfirmScreen() {
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Fee</Text>
-              <Text style={styles.detailValue}>$ 0.00</Text>
+              <Text style={styles.detailValue}>₹ 0.00</Text>
             </View>
           </View>
 
@@ -72,6 +98,28 @@ export default function ConfirmScreen() {
             <Text style={styles.securityText}>Secure 256-bit Encryption</Text>
           </View>
         </View>
+
+        {/* OTP Section for large transfers */}
+        {isLargeTransfer && (
+          <View style={styles.otpContainer}>
+            <View style={styles.warningBanner}>
+              <MaterialIcons name="security" size={20} color={Colors.error} />
+              <Text style={styles.warningText}>OTP required for transfers over ₹10,000</Text>
+            </View>
+            <Text style={styles.noteLabel}>Enter OTP</Text>
+            <View style={styles.noteInputContainer}>
+              <TextInput
+                style={styles.noteInput}
+                value={otp}
+                onChangeText={setOtp}
+                placeholder="Enter 4-digit OTP"
+                keyboardType="number-pad"
+                maxLength={4}
+              />
+              <MaterialIcons name="dialpad" size={20} color={Colors.secondary + '80'} />
+            </View>
+          </View>
+        )}
 
         {/* Note (Disabled) */}
         <View style={styles.noteContainer}>
@@ -86,10 +134,12 @@ export default function ConfirmScreen() {
           </View>
         </View>
 
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
 
       {/* Floating Action Bar */}
-      <BlurView intensity={85} tint="light" style={[styles.floatingActionBar, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+      <View style={[styles.floatingActionBar, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <Button 
           label="Confirm Payment" 
           icon="check-circle" 
@@ -102,7 +152,7 @@ export default function ConfirmScreen() {
           onPress={() => router.back()} 
           style={{ height: 48 }}
         />
-      </BlurView>
+      </View>
     </View>
   );
 }
@@ -111,6 +161,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.surface,
+  },
+  keyboardAvoidingView: {
+    flex: 1,
   },
   scrollContent: {
     padding: Spacing.marginMobile,
@@ -238,5 +291,23 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.stackMd,
     borderTopWidth: 1,
     borderTopColor: Colors.surfaceVariant + '80',
+    backgroundColor: Colors.surface,
+  },
+  otpContainer: {
+    marginBottom: Spacing.stackLg,
+  },
+  warningBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.errorContainer,
+    padding: 12,
+    borderRadius: BorderRadius.DEFAULT,
+    marginBottom: 16,
+  },
+  warningText: {
+    ...Typography.bodySm,
+    color: Colors.onErrorContainer,
+    marginLeft: 8,
+    flex: 1,
   },
 });

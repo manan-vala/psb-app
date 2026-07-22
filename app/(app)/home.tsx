@@ -7,11 +7,13 @@ import { DrawerNavigationProp } from '@react-navigation/drawer';
 import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../../constants/theme';
 import { TopAppBar } from '../../components/ui/TopAppBar';
 import { TrustIndicatorDot } from '../../components/ui/TrustIndicatorDot';
+import { useBalance } from '../../context/BalanceContext';
 
 export default function HomeScreen() {
   const router = useRouter();
   const navigation = useNavigation<DrawerNavigationProp<any>>();
   const [showBalance, setShowBalance] = useState(true);
+  const { balance } = useBalance();
 
   const toggleBalance = () => setShowBalance(!showBalance);
 
@@ -23,9 +25,9 @@ export default function HomeScreen() {
   ];
 
   const recentTransactions = [
-    { id: '1', name: 'Whole Foods', amount: '-$84.50', category: 'Groceries', date: 'Today, 2:45 PM', icon: 'shopping-cart', iconBg: Colors.secondaryContainer, iconColor: Colors.onSecondaryContainer, isPositive: false },
-    { id: '2', name: 'Netflix', amount: '-$15.99', category: 'Entertainment', date: 'Yesterday, 8:00 AM', icon: 'movie', iconBg: Colors.tertiaryContainer, iconColor: Colors.onTertiaryContainer, isPositive: false },
-    { id: '3', name: 'Salary', amount: '+$4,250.00', category: 'Income', date: 'Oct 25, 9:00 AM', icon: 'work', iconBg: Colors.primaryContainer, iconColor: Colors.onPrimaryContainer, isPositive: true },
+    { id: '1', name: 'Big Bazaar', amount: '-₹84.50', category: 'Groceries', date: 'Today, 2:45 PM', icon: 'shopping-cart', iconBg: Colors.secondaryContainer, iconColor: Colors.onSecondaryContainer, isPositive: false },
+    { id: '2', name: 'Netflix', amount: '-₹15.99', category: 'Entertainment', date: 'Yesterday, 8:00 AM', icon: 'movie', iconBg: Colors.tertiaryContainer, iconColor: Colors.onTertiaryContainer, isPositive: false },
+    { id: '3', name: 'Salary', amount: '+₹4,250.00', category: 'Income', date: 'Oct 25, 9:00 AM', icon: 'work', iconBg: Colors.primaryContainer, iconColor: Colors.onPrimaryContainer, isPositive: true },
   ];
 
   const RightElement = () => (
@@ -50,7 +52,7 @@ export default function HomeScreen() {
         {/* Greeting */}
         <View style={styles.greeting}>
           <Text style={styles.greetingText}>Good Morning,</Text>
-          <Text style={styles.greetingName}>Alex Johnson</Text>
+          <Text style={styles.greetingName}>Rahul Kapoor</Text>
         </View>
 
         {/* Balance Card */}
@@ -65,15 +67,15 @@ export default function HomeScreen() {
           </View>
           
           <Text style={styles.balanceAmount}>
-            {showBalance ? '$24,562.00' : '••••••••'}
+            {showBalance ? `₹${balance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '••••••••'}
           </Text>
 
           <View style={styles.balanceActions}>
             <TouchableOpacity style={styles.primaryAction}>
-              <Text style={styles.primaryActionText}>Add Money</Text>
+              <Text style={styles.primaryActionText}>Passbook</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.secondaryAction}>
-              <Text style={styles.secondaryActionText}>Details</Text>
+              <Text style={styles.secondaryActionText}>Cards</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -1,105 +1,135 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Platform, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { Colors, Typography, Spacing, Shadows } from '../../constants/theme';
-import { Input } from '../../components/ui/Input';
+import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../../constants/theme';
 import { Button } from '../../components/ui/Button';
-import { useTelemetry } from '../../context/TelemetryContext';
+import BobLogo from '../../assets/BOB-Iogo.svg';
 
-// Simple UUID generator for the demo session
-function generateSessionId() {
-  return Math.random().toString(36).substring(2, 15);
-}
+// Utility to shuffle an array
+const shuffleArray = (array: any[]) => {
+  const newArr = [...array];
+  for (let i = newArr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+  }
+  return newArr;
+};
 
 export default function LoginScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const {
-    keystrokeInputProps,
-    pasteHandlers,
-    startGyroSampling,
-    stopGyroSampling,
-    submitTelemetry,
-  } = useTelemetry();
+  const [pin, setPin] = useState('');
+  const [keypadNumbers, setKeypadNumbers] = useState<number[]>([]);
 
-  const handleLogin = async () => {
-    setLoading(true);
-    try {
-      const sessionId = generateSessionId();
-      const userId = 'user_123'; // Hardcoded for demo
+  useEffect(() => {
+    // Generate a shuffled array of digits 0-9 on mount
+    setKeypadNumbers(shuffleArray([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]));
+  }, []);
+
+  const handleKeyPress = (digit: number) => {
+    if (pin.length < 4) {
+      const newPin = pin + digit;
+      setPin(newPin);
       
-      const assessment = await submitTelemetry(userId, sessionId);
-
-      if (assessment.action === 'ALLOW') {
-        router.replace('/(app)/home');
-      } else if (assessment.action === 'STEP_UP') {
-        // Show BiometricModal (always resolves true in demo)
-        // For now, pass through
-        router.replace('/(app)/home');
-      } else {
-        // BLOCK
-        router.push({ pathname: '/(auth)/blocked', params: { reason: assessment.explanation } });
+      if (newPin.length === 4) {
+        handleLogin(newPin);
       }
-    } catch (err) {
-      // API unreachable -> fail open for demo
-      console.warn('Telemetry API unreachable, failing open', err);
-      router.replace('/(app)/home');
-    } finally {
-      setLoading(false);
     }
   };
 
+  const handleBackspace = () => {
+    if (pin.length > 0) {
+      setPin(pin.slice(0, -1));
+    }
+  };
+
+  const handleLogin = async (currentPin: string) => {
+    setLoading(true);
+    // Simulate API call for authentication
+    setTimeout(() => {
+      setLoading(false);
+      // For demo purposes, we will accept any 4-digit PIN
+      router.replace('/(app)/home');
+    }, 1000);
+  };
+
+  const renderPinIndicator = () => {
+    return (
+      <View style={styles.pinIndicatorContainer}>
+        {[0, 1, 2, 3].map((index) => (
+          <View 
+            key={index} 
+            style={[
+              styles.pinDot,
+              pin.length > index ? styles.pinDotFilled : null
+            ]} 
+          />
+        ))}
+      </View>
+    );
+  };
+
+  const renderKeypad = () => {
+    if (keypadNumbers.length === 0) return null;
+
+    return (
+      <View style={styles.keypadContainer}>
+        <View style={styles.keypadRow}>
+          <KeypadButton value={keypadNumbers[0]} onPress={() => handleKeyPress(keypadNumbers[0])} />
+          <KeypadButton value={keypadNumbers[1]} onPress={() => handleKeyPress(keypadNumbers[1])} />
+          <KeypadButton value={keypadNumbers[2]} onPress={() => handleKeyPress(keypadNumbers[2])} />
+        </View>
+        <View style={styles.keypadRow}>
+          <KeypadButton value={keypadNumbers[3]} onPress={() => handleKeyPress(keypadNumbers[3])} />
+          <KeypadButton value={keypadNumbers[4]} onPress={() => handleKeyPress(keypadNumbers[4])} />
+          <KeypadButton value={keypadNumbers[5]} onPress={() => handleKeyPress(keypadNumbers[5])} />
+        </View>
+        <View style={styles.keypadRow}>
+          <KeypadButton value={keypadNumbers[6]} onPress={() => handleKeyPress(keypadNumbers[6])} />
+          <KeypadButton value={keypadNumbers[7]} onPress={() => handleKeyPress(keypadNumbers[7])} />
+          <KeypadButton value={keypadNumbers[8]} onPress={() => handleKeyPress(keypadNumbers[8])} />
+        </View>
+        <View style={styles.keypadRow}>
+          <View style={styles.keypadButtonEmpty} />
+          <KeypadButton value={keypadNumbers[9]} onPress={() => handleKeyPress(keypadNumbers[9])} />
+          <TouchableOpacity style={styles.keypadButton} onPress={handleBackspace} disabled={pin.length === 0}>
+            <MaterialIcons name="backspace" size={28} color={pin.length > 0 ? Colors.onSurface : Colors.outline} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
         {/* Decorative Background Gradients */}
         <View style={styles.topBlob} />
         
-        {/* Main Content (pushed down) */}
+        {/* Main Content */}
         <View style={styles.content}>
           
           {/* Header Section */}
           <View style={styles.header}>
-            <View style={styles.iconContainer}>
-              <MaterialIcons name="account-balance" size={32} color={Colors.primary} />
+            <View style={[styles.iconContainer, { backgroundColor: 'transparent', shadowOpacity: 0, elevation: 0 }]}>
+              <BobLogo width={80} height={80} />
             </View>
-            <Text style={styles.title}>bob World</Text>
-            <Text style={styles.subtitle}>Welcome back</Text>
+            <Text style={styles.title}>Bob World</Text>
+            <Text style={styles.subtitle}>Enter 4-digit PIN</Text>
           </View>
 
           {/* Form */}
           <View style={styles.form}>
-            <Input
-              label="Customer ID / Mobile Number"
-              placeholder="Enter your ID or number"
-              leadingIcon="person"
-              autoCapitalize="none"
-              keyboardType="default"
-            />
-            <Input
-              label="Password"
-              placeholder="Enter your password"
-              leadingIcon="lock"
-              isPassword
-              {...keystrokeInputProps()}
-              onFocusCapture={() => {
-                pasteHandlers.onFocusCapture();
-                startGyroSampling();
-              }}
-              onChangeTextCapture={pasteHandlers.onChangeTextCapture}
-              onBlur={stopGyroSampling}
-            />
-            <Text style={styles.forgotPassword}>Forgot Password?</Text>
+            {renderPinIndicator()}
+            {renderKeypad()}
+            <TouchableOpacity onPress={() => setPin('')}>
+              <Text style={styles.forgotPassword}>Forgot PIN?</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Actions */}
           <View style={styles.actions}>
-            <Button label="Login" onPress={handleLogin} loading={loading} />
-            
             <View style={styles.dividerContainer}>
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>Or</Text>
@@ -110,7 +140,7 @@ export default function LoginScreen() {
               label="Login with Biometrics"
               variant="secondary"
               icon="fingerprint"
-              onPress={handleLogin}
+              onPress={() => handleLogin(pin)} // Demo behavior
               disabled={loading}
             />
           </View>
@@ -124,7 +154,16 @@ export default function LoginScreen() {
           <Text style={styles.footerLink}>Security Tips</Text>
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
+  );
+}
+
+// Sub-component for Keypad Buttons
+function KeypadButton({ value, onPress }: { value: number; onPress: () => void }) {
+  return (
+    <TouchableOpacity style={styles.keypadButton} onPress={onPress}>
+      <Text style={styles.keypadButtonText}>{value}</Text>
+    </TouchableOpacity>
   );
 }
 
@@ -173,16 +212,65 @@ const styles = StyleSheet.create({
   subtitle: {
     ...Typography.bodyLg,
     color: Colors.onSurfaceVariant,
+    marginTop: 8,
   },
   form: {
     marginBottom: Spacing.stackLg,
+    alignItems: 'center',
+  },
+  pinIndicatorContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 40,
+    gap: 16,
+  },
+  pinDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: Colors.outline,
+    backgroundColor: 'transparent',
+  },
+  pinDotFilled: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.primary,
+  },
+  keypadContainer: {
+    width: '100%',
+    maxWidth: 320,
+    gap: 16,
+    marginBottom: 24,
+  },
+  keypadRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  keypadButton: {
+    flex: 1,
+    height: 64,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.surfaceContainerLowest,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Shadows.low,
+    borderWidth: 1,
+    borderColor: Colors.outlineVariant + '40',
+  },
+  keypadButtonEmpty: {
+    flex: 1,
+    height: 64,
+  },
+  keypadButtonText: {
+    ...Typography.displayMd,
+    color: Colors.onSurface,
   },
   forgotPassword: {
     ...Typography.labelMd,
     color: Colors.primary,
-    textAlign: 'right',
-    marginTop: -8,
-    marginBottom: 16,
+    marginTop: 16,
   },
   actions: {
     gap: Spacing.stackMd,

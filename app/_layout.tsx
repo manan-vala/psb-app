@@ -7,6 +7,7 @@ import { Colors } from '../constants/theme';
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TelemetryProvider } from '../context/TelemetryContext';
+import { BalanceProvider } from '../context/BalanceContext';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -33,13 +34,15 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <TelemetryProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(app)" options={{ headerShown: false }} />
-          {/* Fallback for index to redirect to auth. Currently we just rely on expo-router index if exists. */}
-        </Stack>
-      </TelemetryProvider>
+      <BalanceProvider>
+        <TelemetryProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(app)" options={{ headerShown: false }} />
+            {/* Fallback for index to redirect to auth. Currently we just rely on expo-router index if exists. */}
+          </Stack>
+        </TelemetryProvider>
+      </BalanceProvider>
     </SafeAreaProvider>
   );
 }
