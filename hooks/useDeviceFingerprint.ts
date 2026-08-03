@@ -20,20 +20,34 @@ async function computeFingerprint(): Promise<string> {
 
 export function useDeviceFingerprint() {
   const [fingerprintHash, setFingerprintHash] = useState<string>('');
+  const [isFirstDevice, setIsFirstDevice] = useState<boolean>(false);
+  const [isDeviceChanged, setIsDeviceChanged] = useState<boolean>(false);
 
   useEffect(() => {
     async function init() {
       const stored = await SecureStore.getItemAsync(STORE_KEY);
-      if (stored) {
-        setFingerprintHash(stored);
-        return;
+      const currentHash = await computeFingerprint();
+      
+      if (!stored) {
+        // First time opening the app on this device
+        setIsFirstDevice(true);
+        await SecureStore.setItemAsync(STORE_KEY, currentHash);
+        setFingerprintHash(currentHash);
+      } else {
+        // Not the first time. Has the hardware profile changed?
+        setIsFirstDevice(false);
+        if (stored !== currentHash) {
+          setIsDeviceChanged(true);
+          // Optionally update the store to the new hash, or keep the original for persistent flagging
+          await SecureStore.setItemAsync(STORE_KEY, currentHash);
+        } else {
+          setIsDeviceChanged(false);
+        }
+        setFingerprintHash(currentHash);
       }
-      const hash = await computeFingerprint();
-      await SecureStore.setItemAsync(STORE_KEY, hash);
-      setFingerprintHash(hash);
     }
     init();
   }, []);
 
-  return { fingerprintHash };
+  return { fingerprintHash, isFirstDevice, isDeviceChanged };
 }

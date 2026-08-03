@@ -1,10 +1,24 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Drawer } from 'expo-router/drawer';
+import { useRouter, usePathname } from 'expo-router';
 import { BottomNavBar } from '../../components/ui/BottomNavBar';
 import { DrawerContent } from '../../components/ui/DrawerContent';
+import { useTelemetry } from '../../context/TelemetryContext';
 
 export default function AppLayout() {
+  const { isVpnActive } = useTelemetry();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (isVpnActive && pathname !== '/blocked') {
+      router.replace('/(app)/blocked');
+    } else if (!isVpnActive && pathname === '/blocked') {
+      router.replace('/(app)/home');
+    }
+  }, [isVpnActive, pathname]);
+
   return (
     <View style={styles.container}>
       <Drawer
@@ -21,12 +35,20 @@ export default function AppLayout() {
       >
         <Drawer.Screen name="home" />
         <Drawer.Screen name="transfer" />
+        <Drawer.Screen name="pay" />
+        <Drawer.Screen name="more" />
         <Drawer.Screen name="confirm" />
+        <Drawer.Screen name="fixed-deposits" />
+        <Drawer.Screen name="cards" />
+        <Drawer.Screen name="loans" />
+        <Drawer.Screen name="offers" />
+        <Drawer.Screen name="support" />
         <Drawer.Screen name="settings" />
+        <Drawer.Screen name="blocked" options={{ drawerItemStyle: { display: 'none' }, swipeEnabled: false }} />
       </Drawer>
       {/* Bottom Nav Bar placed outside the Drawer content so it stays fixed on all app screens */}
       {/* Actually, expo-router's Drawer wraps everything, so placing BottomNavBar here puts it at the absolute bottom of the screen */}
-      <BottomNavBar />
+      {pathname !== '/blocked' && <BottomNavBar />}
     </View>
   );
 }
@@ -36,3 +58,4 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+

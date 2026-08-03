@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -8,18 +8,26 @@ import { Colors, Typography, Spacing, Shadows, BorderRadius } from '../../consta
 import { TopAppBar } from '../../components/ui/TopAppBar';
 import { TrustIndicatorDot } from '../../components/ui/TrustIndicatorDot';
 import { useBalance } from '../../context/BalanceContext';
+import { getProfile } from '../../services/auth';
 
 export default function HomeScreen() {
   const router = useRouter();
   const navigation = useNavigation<DrawerNavigationProp<any>>();
   const [showBalance, setShowBalance] = useState(true);
   const { balance } = useBalance();
+  const [firstName, setFirstName] = useState('Rahul Kapoor');
+
+  useEffect(() => {
+    getProfile().then((profile) => {
+      if (profile?.fullName) setFirstName(profile.fullName);
+    });
+  }, []);
 
   const toggleBalance = () => setShowBalance(!showBalance);
 
   const quickActions = [
     { label: 'Transfer', icon: 'swap-horiz', color: Colors.primaryContainer, route: '/(app)/transfer' },
-    { label: 'Pay Bills', icon: 'receipt', color: Colors.secondaryContainer, route: null },
+    { label: 'Pay Bills', icon: 'receipt', color: Colors.secondaryContainer, route: '/(app)/pay' },
     { label: 'Scan QR', icon: 'qr-code-scanner', color: Colors.tertiaryContainer, route: null },
     { label: 'Invest', icon: 'trending-up', color: Colors.errorContainer, route: null },
   ];
@@ -52,7 +60,7 @@ export default function HomeScreen() {
         {/* Greeting */}
         <View style={styles.greeting}>
           <Text style={styles.greetingText}>Good Morning,</Text>
-          <Text style={styles.greetingName}>Rahul Kapoor</Text>
+          <Text style={styles.greetingName}>{firstName}</Text>
         </View>
 
         {/* Balance Card */}
@@ -74,7 +82,7 @@ export default function HomeScreen() {
             <TouchableOpacity style={styles.primaryAction}>
               <Text style={styles.primaryActionText}>Passbook</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryAction}>
+            <TouchableOpacity style={styles.secondaryAction} onPress={() => router.push('/(app)/cards')}>
               <Text style={styles.secondaryActionText}>Cards</Text>
             </TouchableOpacity>
           </View>

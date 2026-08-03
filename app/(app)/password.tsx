@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useBalance } from '../../context/BalanceContext';
+import { verifyPassword } from '../../services/auth';
 
 export default function PasswordScreen() {
   const router = useRouter();
@@ -22,16 +23,16 @@ export default function PasswordScreen() {
       Alert.alert('Error', 'Please enter your password to proceed.');
       return;
     }
-    
-    // Hardcoded password for demo purposes
-    if (password !== 'password123') {
-      Alert.alert('Incorrect Password', 'Please enter the correct password. (Hint: password123)');
-      return;
-    }
 
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    setTimeout(async () => {
+      const isValid = await verifyPassword(password);
+      if (!isValid) {
+        setLoading(false);
+        Alert.alert('Incorrect Password', 'Please enter your Bob World account password.');
+        return;
+      }
+
       setLoading(false);
       updateBalance(parseFloat(amount));
       router.push({ pathname: '/(app)/success', params: { amount, payeeName } });

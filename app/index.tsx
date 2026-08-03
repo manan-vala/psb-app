@@ -5,11 +5,29 @@ import * as Location from 'expo-location';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors, Typography, Spacing, Shadows } from '../constants/theme';
 import { Button } from '../components/ui/Button';
+import { hasAccount, hasPin } from '../services/auth';
 
 export default function EntryScreen() {
   const router = useRouter();
   const [status, setStatus] = useState<Location.PermissionStatus | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Decides which auth screen a permitted user should land on:
+  // no account yet -> create one; account but no PIN -> finish setup via
+  // password verification; both present -> the normal PIN quick-login.
+  const routeToAuthEntry = async () => {
+    const account = await hasAccount();
+    if (!account) {
+      router.replace('/(auth)/register');
+      return;
+    }
+    const pin = await hasPin();
+    if (!pin) {
+      router.replace({ pathname: '/(auth)/password-login', params: { next: 'set-pin' } });
+      return;
+    }
+    router.replace('/(auth)/login');
+  };
 
   const checkAndRequestPermission = async () => {
     try {
@@ -20,7 +38,7 @@ export default function EntryScreen() {
 
       if (status === Location.PermissionStatus.GRANTED) {
         // Automatically redirect if granted
-        router.replace('/(auth)/login');
+        await routeToAuthEntry();
       }
     } catch (error) {
       console.error('Error requesting location permission:', error);
@@ -38,7 +56,7 @@ export default function EntryScreen() {
         const { status } = await Location.getForegroundPermissionsAsync();
         setStatus(status);
         if (status === Location.PermissionStatus.GRANTED) {
-          router.replace('/(auth)/login');
+          await routeToAuthEntry();
         }
       }
     });

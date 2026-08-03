@@ -7,11 +7,14 @@ export interface TelemetryPayload {
     lat: number
     lon: number
     rtt: number
+    isVpn?: boolean
   }
 
   device: {
     fingerprintHash: string
     platform: 'android'
+    isFirstDevice?: boolean
+    isDeviceChanged?: boolean
   }
 
   behavior: {

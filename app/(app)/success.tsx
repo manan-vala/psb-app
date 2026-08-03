@@ -77,7 +77,8 @@ export default function SuccessScreen() {
 
   useEffect(() => {
     if (amount && payeeName) {
-      reportPayment(amount, payeeName);
+      // In a real app, riskScore and action would come from the context or state
+      reportPayment(amount, payeeName, refNo, 10, 'ALLOW', transactionDate.getTime());
     }
 
     // Check circle pop-in

@@ -5,6 +5,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, usePathname } from 'expo-router';
 import { Colors, Typography, Shadows } from '../../constants/theme';
 
+// usePathname() strips route-group segments like "(app)", so comparisons
+// must use the un-grouped form (router.push still needs the full path).
+const stripGroup = (route: string) => route.replace(/^\/\(app\)/, '') || '/';
+
 export function BottomNavBar() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -13,18 +17,19 @@ export function BottomNavBar() {
   const tabs = [
     { name: 'Home', icon: 'home', route: '/(app)/home' },
     { name: 'Transfer', icon: 'swap-horiz', route: '/(app)/transfer' }, // sync-alt substitute
-    { name: 'Pay', icon: 'payments', route: '/(app)/pay' }, // placeholder
-    { name: 'More', icon: 'more-horiz', route: '/(app)/more' }, // placeholder
+    { name: 'Pay', icon: 'payments', route: '/(app)/pay' },
+    { name: 'More', icon: 'more-horiz', route: '/(app)/more' },
   ];
 
-  if (pathname === '/confirm' || pathname === '/(app)/confirm') {
+  const hiddenOn = ['/confirm', '/password', '/success', '/blocked'];
+  if (hiddenOn.includes(pathname)) {
     return null;
   }
 
   return (
     <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 16) }]}>
       {tabs.map((tab) => {
-        const isActive = pathname === tab.route;
+        const isActive = pathname === stripGroup(tab.route);
 
         return (
           <TouchableOpacity

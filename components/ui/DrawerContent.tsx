@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,11 +6,23 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter, usePathname } from 'expo-router';
 import { Colors, Typography, Spacing } from '../../constants/theme';
 import { Button } from './Button';
+import { getProfile, logout } from '../../services/auth';
+
+// usePathname() strips route-group segments like "(app)", so routes must be
+// compared without that prefix (router.push still needs the full path).
+const stripGroup = (route: string) => route.replace(/^\/\(app\)/, '') || '/';
 
 export function DrawerContent(props: DrawerContentComponentProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const pathname = usePathname();
+  const [userName, setUserName] = useState('Bob World Customer');
+
+  useEffect(() => {
+    getProfile().then((profile) => {
+      if (profile?.fullName) setUserName(profile.fullName);
+    });
+  }, []);
 
   const navItems = [
     { label: 'My Accounts', icon: 'account-balance', route: '/(app)/home' },
@@ -33,7 +45,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
               style={styles.avatar}
             />
           </View>
-          <Text style={styles.userName}>Alex Johnson</Text>
+          <Text style={styles.userName}>{userName}</Text>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>Premier Customer</Text>
           </View>
@@ -42,7 +54,7 @@ export function DrawerContent(props: DrawerContentComponentProps) {
         {/* Navigation Links */}
         <View style={styles.navSection}>
           {navItems.map((item, index) => {
-            const isActive = pathname === item.route;
+            const isActive = pathname === stripGroup(item.route);
             return (
               <React.Fragment key={item.label}>
                 {item.divider && <View style={styles.divider} />}
@@ -84,8 +96,9 @@ export function DrawerContent(props: DrawerContentComponentProps) {
           label="Logout"
           variant="secondary"
           icon="logout"
-          onPress={() => {
+          onPress={async () => {
             props.navigation.closeDrawer();
+            await logout();
             router.replace('/(auth)/login');
           }}
           style={{ height: 48, borderRadius: 24 }} // Custom styling for this button

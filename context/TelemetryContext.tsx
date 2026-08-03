@@ -4,6 +4,7 @@ import { usePasteDetection } from '../hooks/usePasteDetection';
 import { useGyroscope } from '../hooks/useGyroscope';
 import { useDeviceFingerprint } from '../hooks/useDeviceFingerprint';
 import { useJourneyTracker } from '../hooks/useJourneyTracker';
+import { useVpnDetection } from '../hooks/useVpnDetection';
 import { submitTelemetry as submitTelemetryApi, measureRTT } from '../services/api';
 import { RiskAssessment, TelemetryPayload } from '../types/telemetry';
 
@@ -17,6 +18,7 @@ interface TelemetryContextValue {
   stopGyroSampling: () => void;
   submitTelemetry: (userId: string, sessionId: string) => Promise<RiskAssessment>;
   fingerprintHash: string;
+  isVpnActive: boolean;
 }
 
 const TelemetryContext = createContext<TelemetryContextValue | null>(null);
@@ -25,8 +27,9 @@ export function TelemetryProvider({ children }: { children: ReactNode }) {
   const keystroke = useKeystrokeDynamics();
   const paste = usePasteDetection();
   const gyro = useGyroscope();
-  const { fingerprintHash } = useDeviceFingerprint();
+  const { fingerprintHash, isFirstDevice, isDeviceChanged } = useDeviceFingerprint();
   const journey = useJourneyTracker();
+  const { isVpnActive } = useVpnDetection();
 
   async function submitTelemetry(userId: string, sessionId: string): Promise<RiskAssessment> {
     const rtt = await measureRTT();
@@ -37,8 +40,8 @@ export function TelemetryProvider({ children }: { children: ReactNode }) {
       userId,
       sessionId,
       timestamp: Date.now(),
-      network: { lat: 0, lon: 0, rtt },
-      device: { fingerprintHash, platform: 'android' },
+      network: { lat: 0, lon: 0, rtt, isVpn: isVpnActive },
+      device: { fingerprintHash, platform: 'android', isFirstDevice, isDeviceChanged },
       behavior: {
         ...behaviorMetrics,
         pasteDetected: paste.isPasteDetected(),
@@ -60,6 +63,7 @@ export function TelemetryProvider({ children }: { children: ReactNode }) {
     stopGyroSampling: gyro.stopSampling,
     submitTelemetry,
     fingerprintHash,
+    isVpnActive,
   };
 
   return (
